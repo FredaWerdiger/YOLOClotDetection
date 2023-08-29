@@ -24,12 +24,16 @@ codec_annotations = mediaflux + 'CTA/annotation_data/'
 annotations_raw = glob.glob(codec_annotations + 'annotations_all/*')
 annotations_mipped = glob.glob(codec_annotations + 'annotations_mipped/*')
 
+
 def get_coords(seg_path):
     im = sitk.ReadImage(seg_path, sitk.sitkUInt8)
     x, y, z = im.GetSize()
     labelfilter = sitk.LabelShapeStatisticsImageFilter()
     labelfilter.Execute(im)
-    centroid = labelfilter.GetCentroid(1)
+    try:
+        centroid = labelfilter.GetCentroid(1)
+    except RuntimeError:
+        return 0
     xc, yc, zc = im.TransformPhysicalPointToIndex(centroid)
     bbox = labelfilter.GetBoundingBox(1)
     _, _, _, xsize, ysize, zsize = bbox
@@ -42,3 +46,32 @@ def get_coords(seg_path):
     return xc_norm, yc_norm, zc_norm, xsize_norm, ysize_norm, zsize_norm
 
 
+out_dir = codec_annotations + 'annotations_mipped_YOLO/'
+if not os.path.exists(out_dir):
+    os.makedirs(out_dir)
+
+for annotation in annotations_mipped:
+    id = 'INSP_' + os.path.basename(annotation).split('_')[1]
+    print(id)
+    out_file = os.path.join(out_dir, id + '_yolo.txt')
+    try:
+        xc_norm, yc_norm, zc_norm, xsize_norm, ysize_norm, zsize_norm = get_coords(annotation)
+        with open(out_file, 'w') as myfile:
+            myfile.write('1')
+            myfile.write(' ')
+            myfile.write(str(xc_norm))
+            myfile.write(' ')
+            myfile.write(str(yc_norm))
+            myfile.write(' ')
+            myfile.write(str(zc_norm))
+            myfile.write(' ')
+            myfile.write(str(xsize_norm))
+            myfile.write(' ')
+            myfile.write(str(ysize_norm))
+            myfile.write(' ')
+            myfile.write(str(zsize_norm))
+    except TypeError:
+        # error is thrown due to empty seg, redirect to write an empty file
+        with open(out_file, 'w') as myfile:
+            myfile.write('')
+        continue
