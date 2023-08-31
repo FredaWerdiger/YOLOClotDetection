@@ -19,10 +19,10 @@ mediaflux = 'Z:/'
 if os.path.exists(HOMEDIR + 'mediaflux'):
     mediaflux = HOMEDIR + 'mediaflux/'
 
-codec_annotations = mediaflux + 'CTA/annotation_data/'
+codec = mediaflux + 'CTA/CODEC-IV/'
 
-annotations_raw = glob.glob(codec_annotations + 'annotations_all/*')
-annotations_mipped = glob.glob(codec_annotations + 'annotations_mipped/*')
+annotations_raw = glob.glob(codec + 'CODEC-IV/*/*_clot_annotation.nii.gz')
+# annotations_mipped = glob.glob(codec_annotations + 'annotations_mipped/*')
 
 
 def get_coords(seg_path):
@@ -46,14 +46,14 @@ def get_coords(seg_path):
     return xc_norm, yc_norm, zc_norm, xsize_norm, ysize_norm, zsize_norm
 
 
-out_dir = codec_annotations + 'annotations_mipped_YOLO/'
+out_dir = codec + 'YOLO/annotations'
 if not os.path.exists(out_dir):
     os.makedirs(out_dir)
 
-for annotation in annotations_mipped:
-    id = 'INSP_' + os.path.basename(annotation).split('_')[1]
+for annotation in annotations_raw:
+    id = os.path.basename(annotation).split('_')[0]
     print(id)
-    out_file = os.path.join(out_dir, id + '_yolo.txt')
+    out_file = os.path.join(out_dir, id + '_clot_annotation.txt')
     try:
         xc_norm, yc_norm, zc_norm, xsize_norm, ysize_norm, zsize_norm = get_coords(annotation)
         with open(out_file, 'w') as myfile:
